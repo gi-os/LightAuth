@@ -3,7 +3,6 @@ package com.gios.lightauth
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
@@ -15,9 +14,8 @@ import com.gios.lightauth.ui.AuthViewModel
 import com.gios.lightauth.ui.CodeScreen
 import com.gios.lightauth.ui.ConfirmRemoveScreen
 import com.gios.lightauth.ui.HomeScreen
+import com.gios.lightauth.ui.ScanScreen
 import com.gios.lightauth.ui.theme.LightAuthTheme
-import com.journeyapps.barcodescanner.ScanContract
-import com.journeyapps.barcodescanner.ScanOptions
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,28 +30,24 @@ class MainActivity : ComponentActivity() {
                 val nav = rememberNavController()
                 val vm: AuthViewModel = viewModel()
 
-                val scanQr = rememberLauncherForActivityResult(ScanContract()) { result ->
-                    val raw = result.contents?.trim() ?: return@rememberLauncherForActivityResult
-                    vm.addFromQr(raw) { id ->
-                        nav.navigate("code/$id")
-                    }
-                }
-
-                fun addNew() {
-                    scanQr.launch(
-                        ScanOptions()
-                            .setDesiredBarcodeFormats(ScanOptions.QR_CODE)
-                            .setBeepEnabled(false)
-                            .setPrompt("Scan the 2FA QR code"),
-                    )
-                }
-
                 NavHost(nav, startDestination = "home") {
                     composable("home") {
                         HomeScreen(
                             vm = vm,
-                            onAddNew = ::addNew,
+                            onAddNew = { nav.navigate("scan") },
                             onOpenAccount = { id -> nav.navigate("code/$id") },
+                        )
+                    }
+                    composable("scan") {
+                        ScanScreen(
+                            onBack = { nav.popBackStack() },
+                            onScanned = { raw ->
+                                // Leave the scanner first. A bad QR surfaces as the error
+                                // dialog on home, and that dialog cannot show over a
+                                // screen that is about to be popped.
+                                nav.popBackStack("home", inclusive = false)
+                                vm.addFromQr(raw) { id -> nav.navigate("code/$id") }
+                            },
                         )
                     }
                     composable(

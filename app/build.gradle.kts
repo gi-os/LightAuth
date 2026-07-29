@@ -65,8 +65,17 @@ dependencies {
     implementation("androidx.room:room-ktx:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
 
-    // otpauth:// QR scanning
-    implementation("com.journeyapps:zxing-android-embedded:4.3.0")
+    // otpauth:// QR scanning: CameraX preview, frames decoded in-process. Same setup as
+    // LightQR — an in-app screen rather than zxing-android-embedded's own activity.
+    val camerax = "1.4.1"
+    implementation("androidx.camera:camera-core:$camerax")
+    implementation("androidx.camera:camera-camera2:$camerax")
+    implementation("androidx.camera:camera-lifecycle:$camerax")
+    implementation("androidx.camera:camera-view:$camerax")
+
+    // ZXing core only — pure Java, no Google Play Services. LightOS ships without GMS,
+    // so ML Kit's barcode scanner is not an option.
+    implementation("com.google.zxing:core:3.5.3")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
 

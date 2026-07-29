@@ -51,6 +51,16 @@ workflow artifact.
 Re-scanning a QR for an account already in the list overwrites it rather than adding a
 duplicate, which is what rotating a secret at the provider looks like from this end.
 
+The scanner is [LightQR](https://github.com/gi-os/LightQR)'s: a CameraX preview with frames
+decoded in-process by **ZXing core** off the luminance plane. Pure Java, no Google Play
+Services — which matters, because LightOS ships without GMS and ML Kit's barcode scanner
+therefore cannot run at all. Only the QR format is enabled; a 2FA page never shows any other
+kind of barcode, and every format left on is work done on every frame for nothing.
+
+It replaced `zxing-android-embedded`, which launches its own full-colour activity with its
+own top bar and orientation handling, none of it restyleable from here. The scanner is now
+an ordinary screen in the app, in the same monochrome idiom as the rest of it.
+
 `digits`, `period` and `algorithm` are all read off the `otpauth://` URI, so eight-digit
 codes, 60-second windows and SHA-256 or SHA-512 accounts work as well as the usual
 six-digit SHA-1 ones. `otpauth://hotp/` counter-based accounts are rejected on the spot
@@ -89,7 +99,9 @@ and updates through Obtainium later, which is the same reason
 
 The port keeps the SDK example's logic — base32 decoder, RFC 6238 generator, `otpauth://`
 parser, keystore cipher, Room schema — and replaces the `LightScreen` chrome with Compose
-and Material3 in the same monochrome idiom as the sibling apps.
+and Material3 in the same monochrome idiom as the sibling apps. The SDK's
+`LightQrCodeScanner` has no equivalent outside the sandbox, so its job is done by LightQR's
+scanner instead.
 
 ## Building
 
