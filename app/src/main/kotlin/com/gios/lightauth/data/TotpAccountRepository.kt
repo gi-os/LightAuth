@@ -62,6 +62,14 @@ class TotpAccountRepository private constructor(
 
     fun observeAccounts(): Flow<List<StoredAccount>> = dao.observeAccounts()
 
+    /**
+     * A plain list, for LightSync's backup provider.
+     *
+     * The UI wants a Flow; a backup wants an answer. Exposing this rather than having the
+     * provider block on the Flow's first emission keeps the awkwardness in one place.
+     */
+    fun accountsForBackup(): List<StoredAccount> = dao.accountsSnapshot()
+
     fun deleteAccount(id: Long): Boolean = dao.deleteAccount(id) > 0
 
     fun decryptSecret(id: Long): String? {

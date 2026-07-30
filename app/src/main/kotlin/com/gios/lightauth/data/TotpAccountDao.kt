@@ -29,6 +29,13 @@ internal interface TotpAccountDao {
     )
     fun observeAccounts(): Flow<List<StoredAccount>>
 
+    /** The same rows, once, for LightSync's backup provider. */
+    @Query(
+        "SELECT id, issuer, label, digits, period, algorithm FROM totp_accounts " +
+            "ORDER BY issuer COLLATE NOCASE, label COLLATE NOCASE"
+    )
+    fun accountsSnapshot(): List<StoredAccount>
+
     @Query("DELETE FROM totp_accounts WHERE id = :id")
     fun deleteAccount(id: Long): Int
 

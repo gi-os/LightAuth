@@ -9,6 +9,23 @@ Scan the QR code a site gives you for 2FA setup; the six-digit code is there whe
 need it. Codes are computed on the phone from the stored secret — the app requests no
 `INTERNET` permission at all, so nothing can leave it even in principle.
 
+## Backups
+
+Set up [LightSync](https://github.com/gi-os/LightSync) once and this app is included — daily, onto
+BasilNet, encrypted on the phone before it leaves.
+
+What goes up is **`otpauth://` URIs, not the database**, and the difference matters. Every stored
+secret is wrapped with an AES key generated inside AndroidKeyStore, which by design cannot leave
+the device, so a copy of `totp_accounts.db` restored onto a new phone would be rows of ciphertext
+with the key gone forever — a backup that looks like one and restores into nothing. Exporting the
+standard URI form instead means the backup is portable, restorable into any authenticator, and
+readable by hand in a pinch.
+
+Restore feeds the same parser the QR scanner uses, and `addAccount` treats issuer plus label as
+the identity — so restoring twice, or onto a phone that still has some of the accounts, converges
+rather than duplicating.
+
+
 ## What this is and why
 
 This is the [light-sdk `authenticator` example](https://github.com/lightphone/light-sdk/tree/main/examples/authenticator)

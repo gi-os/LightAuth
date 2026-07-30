@@ -30,5 +30,16 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!--
+          LightSync's hook. Exported with no permission attribute on purpose: the provider
+          rejects any caller that is not LightSync by package *and* signing certificate, which
+          is a check no manifest attribute can express between apps signed with different keys.
+          The authority suffix is how LightSync discovers the app at all.
+        -->
+        <provider
+            android:name=".backup.Backup"
+            android:authorities="${applicationId}.lightsync.backup"
+            android:exported="true" />
     </application>
 </manifest>
