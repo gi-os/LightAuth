@@ -66,6 +66,24 @@ codes, 60-second windows and SHA-256 or SHA-512 accounts work as well as the usu
 six-digit SHA-1 ones. `otpauth://hotp/` counter-based accounts are rejected on the spot
 rather than stored as something that will never produce a working code.
 
+## The wheel
+
+Turning the wheel scrolls the account list, which is the only thing here long enough to need
+it. Nothing clever is required: Light relabelled the wheel sensor's two scancodes in
+`/system/usr/keylayout/Generic.kl`, nothing in the system intercepts them, so they land in
+the focused window as ordinary key events and `MainActivity` reads them in
+`dispatchKeyEvent` before anything on screen can claim them.
+
+Only the turns. The wheel click and the camera button belong to
+[LightControl](https://github.com/gi-os/LightControl), which owns them across the whole
+phone and passes bare turns through precisely so apps can scroll per notch.
+
+Notches are paid off a fraction per frame rather than applied on arrival, so a spin reads as
+one sweep instead of a stack of jumps, and the first notch after a pause is held until a
+second confirms it — the wheel sits under a thumb, and a stray brush should not move the
+list you are reading a code off. The long version of both is in
+[LightNews](https://github.com/gi-os/LightNews#the-wheel-and-the-camera-button).
+
 ## Where the secrets live
 
 - Room database, one row per account, holding an **AES-GCM blob** — never the base32 secret.
