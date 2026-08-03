@@ -24,6 +24,7 @@ fun HomeScreen(
     vm: AuthViewModel,
     onAddNew: () -> Unit,
     onOpenAccount: (Long) -> Unit,
+    onOpenClock: () -> Unit,
 ) {
     val accounts by vm.accounts.collectAsStateWithLifecycle()
     val error by vm.error.collectAsStateWithLifecycle()
@@ -38,7 +39,12 @@ fun HomeScreen(
             TopAppBar(colors = barColors(), title = { Text("Authenticator") })
         },
         bottomBar = {
-            ActionBar(listOf(BarAction("ADD NEW", onAddNew)))
+            ActionBar(
+                listOf(
+                    BarAction("ADD NEW", onAddNew),
+                    BarAction("CLOCK", onOpenClock),
+                ),
+            )
         },
     ) { pad ->
         Column(Modifier.padding(pad).fillMaxSize().background(Color.Black)) {

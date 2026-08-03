@@ -16,7 +16,9 @@ import com.gios.lightauth.hw.LightKey
 import com.gios.lightauth.hw.LightKeys
 import com.gios.lightauth.hw.LocalWheelBus
 import com.gios.lightauth.hw.WheelBus
+import com.gios.lightauth.time.TimeSource
 import com.gios.lightauth.ui.AuthViewModel
+import com.gios.lightauth.ui.ClockScreen
 import com.gios.lightauth.ui.CodeScreen
 import com.gios.lightauth.ui.ConfirmRemoveScreen
 import com.gios.lightauth.ui.HomeScreen
@@ -52,6 +54,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // Before any code screen can compose: the correction has to be loaded from prefs
+        // or the first code shown after a cold start is the uncorrected one.
+        TimeSource.init(this)
+
         // Codes are meant to be read off the screen and typed elsewhere, not captured.
         // FLAG_SECURE keeps them out of screenshots and the recents thumbnail.
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
@@ -68,6 +74,7 @@ class MainActivity : ComponentActivity() {
                                 vm = vm,
                                 onAddNew = { nav.navigate("scan") },
                                 onOpenAccount = { id -> nav.navigate("code/$id") },
+                                onOpenClock = { nav.navigate("clock") },
                             )
                         }
                         composable("scan") {
@@ -92,7 +99,11 @@ class MainActivity : ComponentActivity() {
                                 accountId = id,
                                 onBack = { nav.popBackStack() },
                                 onRemove = { nav.navigate("confirm-remove/$id") },
+                                onOpenClock = { nav.navigate("clock") },
                             )
+                        }
+                        composable("clock") {
+                            ClockScreen(onBack = { nav.popBackStack() })
                         }
                         composable(
                             "confirm-remove/{id}",

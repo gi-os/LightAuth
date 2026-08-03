@@ -3,11 +3,15 @@
 TOTP two-factor authenticator for the **Light Phone III**. Shows up on the phone as
 **Authenticator** (`com.gios.lightauth`).
 
-**Current version: v1.0.4.** See [Version history](#version-history).
+**Current version: v1.1.x.** See [Version history](#version-history).
 
 Scan the QR code a site gives you for 2FA setup; the six-digit code is there when you
 need it. Codes are computed on the phone from the stored secret — the app requests no
 `INTERNET` permission at all, so nothing can leave it even in principle.
+
+> **If every site rejects every code, it is the phone's clock.** Open **CLOCK**, compare
+> the UTC time it shows against [time.is](https://time.is), and turn the wheel until they
+> match — one second per notch. See [The clock](#the-clock).
 
 ## Backups
 
@@ -52,7 +56,7 @@ the provider.
 Grab the newest signed APK from [Releases](../../releases/latest) and sideload it:
 
 ```bash
-adb install -r LightAuth-v1.0.4.apk
+adb install -r LightAuth-v1.1.x.apk
 ```
 
 Or track `https://github.com/gi-os/LightAuth` in **Obtainium** for updates in place.
@@ -61,6 +65,7 @@ Or track `https://github.com/gi-os/LightAuth` in **Obtainium** for updates in pl
 2. The account lands in the list, issuer on top, account name underneath.
 3. Tap it for the current code and the time left on it.
 4. **REMOVE** → confirm.
+5. **CLOCK** → check the phone's clock against real time if codes are being rejected.
 
 Re-scanning a QR for an account already in the list overwrites it rather than adding a
 duplicate — which is what rotating a secret at the provider looks like from this end.
@@ -99,10 +104,47 @@ top of it double-decoded a label — this decodes `uri.rawPath` exactly once. An
 before decoding to stop that. Both were present in the upstream SDK example and are
 fixed here.
 
+### The clock
+
+A TOTP code is a pure function of the clock and the secret. There is no challenge, no
+round trip, nothing to negotiate — the phone and the server each hash the current
+thirty-second window independently and the digits either match or they do not. So a phone
+whose clock has drifted produces codes that are perfectly correct for a window that has
+already passed, and every provider refuses all of them.
+
+That failure is indistinguishable, from the code screen, from a wrong secret: six
+plausible digits, a countdown that looks healthy, and a rejection at the other end. It is
+also the more likely of the two, because a wrong secret is wrong for one account while a
+wrong clock is wrong for all of them. **Codes failing on every account at once is a clock
+symptom, not a secret symptom.**
+
+**CLOCK** shows the UTC time this app is actually deriving codes from, next to the phone's
+own uncorrected clock. UTC on purpose: it is what TOTP counts in, and it is what
+[time.is](https://time.is) puts next to a countdown, so the two read side by side with no
+timezone in the way. Turn the wheel to nudge the correction a second per notch, or use
+`−10s` / `+10s` for a coarse move and `RESET` to drop back to the phone's own clock. Once
+a correction is in force the code screen says so under the countdown, so a code computed
+from something other than the phone's clock never looks like an ordinary one.
+
+The correction is a signed second count in `SharedPreferences`, applied in `TimeSource`,
+which is now the only place in the app that reads the wall clock. Everything is clamped to
+±24h, and the arithmetic lives in `TimeMath` with no Android imports so the drift-and-
+correct round trip is unit-tested against the RFC 6238 vectors.
+
+Providers accept the neighbouring window as well as the current one, so drift under one
+period still works — which is exactly why a slowly drifting clock fails intermittently
+first and completely later.
+
+**There is deliberately no automatic time sync.** Fetching real time means SNTP or HTTP,
+which means the `INTERNET` permission, and an app that holds every one of your 2FA secrets
+and can also open a socket is a worse trade than lining the clock up by hand once. The
+durable fix is the phone's own clock: `adb shell settings put global auto_time 1` if
+LightOS has dropped network time.
+
 ### The wheel
 
-Turning the wheel scrolls the account list — the only screen here long enough to need
-it. It works because Light relabelled the wheel sensor's scancodes in
+Turning the wheel scrolls the account list, and nudges the correction on the clock screen
+a second per notch. It works because Light relabelled the wheel sensor's scancodes in
 `/system/usr/keylayout/Generic.kl`; nothing in the system intercepts them, so they land
 in the focused window as ordinary key events and `MainActivity` reads them in
 `dispatchKeyEvent` before anything on screen can claim them. No companion service, no
@@ -159,7 +201,8 @@ Latest APK: https://github.com/gi-os/LightControl/releases/latest
 ```
 
 The TOTP maths, base32 decoder and URI parser are free of Android imports and covered by
-unit tests CI runs *before* it will build an APK (14 tests) — a wrong code is invisible
+unit tests CI runs *before* it will build an APK (21 tests, including the RFC 6238
+appendix B vectors) — a wrong code is invisible
 in a screenshot, so it has to be caught here:
 
 ```bash
@@ -183,7 +226,7 @@ CI pins that certificate's SHA-256 in `signing-fingerprint.txt` and fails the bu
 ever drifts, because a changed cert surfaces in Obtainium only as an opaque
 `Failure: Invalid`. Exactly one APK is attached per release; the debug build stays a
 workflow artifact only. `versionCode` is the workflow run number; `versionName` in the
-committed `build.gradle.kts` (currently `1.0.0`) is only the `major.minor` base — CI
+committed `build.gradle.kts` (currently `1.1.0`) is only the `major.minor` base — CI
 stamps the released `major.minor.RUN` (e.g. `1.0.4`) at build time and tags it `vX.Y.Z`.
 
 ## Version history
@@ -196,6 +239,7 @@ Real tags, oldest to newest:
 | v1.0.2 | In-app QR scanning via LightQR's CameraX + ZXing-core reader, replacing `zxing-android-embedded` |
 | v1.0.3 | Hardware wheel scrolls the account list |
 | v1.0.4 | README: documents the wheel and the optional LightControl integration |
+| v1.1.x | **Clock screen.** Codes were being rejected everywhere because the phone's clock had drifted, with nothing on screen to say so. `TimeSource` is now the single clock the app reads, with a persisted signed correction; **CLOCK** shows the UTC time codes are derived from next to the phone's own, wheel-nudgeable a second per notch. Also fixes the QR analyzer, which described the padded camera Y plane as `width`-wide instead of `rowStride`-wide and sheared every row |
 
 ## Why this isn't a LightOS SDK tool
 

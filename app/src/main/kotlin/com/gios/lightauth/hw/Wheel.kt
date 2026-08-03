@@ -122,6 +122,18 @@ fun WheelScroll(state: ScrollableState, active: Boolean = true) {
     }
 }
 
+/**
+ * The wheel as a stepper rather than a scroller: one call per notch, positive for up.
+ *
+ * No smoothing and no debt — the clock correction is an integer count of seconds, and a
+ * glide would overshoot the value you were trying to land on. The stray-brush guard still
+ * applies, because a wheel knocked in a pocket must not quietly move the clock.
+ */
+@Composable
+fun WheelNudge(active: Boolean = true, onNudge: (Int) -> Unit) {
+    ArmedNotches(active) { notches -> onNudge(notches) }
+}
+
 /** The same, for the reader's WebView, which Compose knows nothing about. */
 @Composable
 fun WheelScroll(web: WebView?, active: Boolean = true) {

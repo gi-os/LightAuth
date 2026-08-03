@@ -33,16 +33,24 @@ class QrAnalyzer(private val onResult: (String) -> Unit) : ImageAnalysis.Analyze
 
     override fun analyze(image: ImageProxy) {
         try {
-            val buffer = image.planes[0].buffer
+            val plane = image.planes[0]
+            val buffer = plane.buffer
             val bytes = ByteArray(buffer.remaining()).also { buffer.get(it) }
+
+            // The Y plane is padded: camera2 aligns each row, so rowStride is >= width and
+            // the buffer holds rowStride*height bytes, not width*height. Describing it as
+            // width-wide shears every row by the padding, which is a decode that quietly
+            // never succeeds — so the source is the full stride, cropped to the real width.
+            val stride = plane.rowStride.coerceAtLeast(image.width)
+            val rows = (bytes.size / stride).coerceAtMost(image.height)
 
             val source = PlanarYUVLuminanceSource(
                 bytes,
-                image.width,
-                image.height,
+                stride,
+                rows,
                 0, 0,
                 image.width,
-                image.height,
+                rows,
                 false,
             )
             val bitmap = BinaryBitmap(HybridBinarizer(source))

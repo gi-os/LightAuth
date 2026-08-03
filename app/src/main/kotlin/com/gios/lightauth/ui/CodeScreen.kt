@@ -28,10 +28,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.gios.lightauth.data.StoredAccount
+import com.gios.lightauth.time.TimeMath
+import com.gios.lightauth.time.TimeSource
 import com.gios.lightauth.totp.TotpGenerator
 import com.gios.lightauth.totp.formatExpiryCountdown
 import com.gios.lightauth.totp.groupCodeDigits
 import com.gios.lightauth.ui.theme.Dim
+import com.gios.lightauth.ui.theme.Faint
 import kotlinx.coroutines.delay
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -41,6 +44,7 @@ fun CodeScreen(
     accountId: Long,
     onBack: () -> Unit,
     onRemove: () -> Unit,
+    onOpenClock: () -> Unit,
 ) {
     val account by produceState<StoredAccount?>(null, accountId) { value = vm.loadAccount(accountId) }
     val secret by produceState<String?>(null, accountId) { value = vm.loadSecret(accountId) }
@@ -65,7 +69,16 @@ fun CodeScreen(
             )
         },
         bottomBar = {
-            if (account != null) ActionBar(listOf(BarAction("REMOVE", onRemove)))
+            // CLOCK sits here on purpose: this is the screen you are looking at when a
+            // code gets rejected, so the fix for a drifted clock is one tap away from it.
+            if (account != null) {
+                ActionBar(
+                    listOf(
+                        BarAction("CLOCK", onOpenClock),
+                        BarAction("REMOVE", onRemove),
+                    ),
+                )
+            }
         },
     ) { pad ->
         Column(Modifier.padding(pad).fillMaxSize().background(Color.Black)) {
@@ -84,13 +97,14 @@ fun CodeScreen(
 private fun CodeBody(account: StoredAccount, secret: String) {
     // One tick a second is enough: the code only changes on a period boundary, and the
     // countdown is the only thing that moves in between.
-    var now by remember { mutableLongStateOf(System.currentTimeMillis() / 1000) }
+    var now by remember { mutableLongStateOf(TimeSource.nowSeconds()) }
     LaunchedEffect(Unit) {
         while (true) {
-            now = System.currentTimeMillis() / 1000
+            now = TimeSource.nowSeconds()
             delay(1000)
         }
     }
+    val offset = TimeSource.offsetSeconds()
 
     // A secret that survived the parser but fails here means a corrupt row rather than
     // a bad scan, so say so instead of showing a code that was never valid.
@@ -136,5 +150,15 @@ private fun CodeBody(account: StoredAccount, secret: String) {
             style = MaterialTheme.typography.bodyMedium,
             color = Dim,
         )
+        // Only when a correction is in force. A code that is right for a time the phone
+        // does not believe in is worth saying out loud; "+0s" on every screen is not.
+        if (offset != 0) {
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Clock corrected ${TimeMath.formatOffset(offset)}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Faint,
+            )
+        }
     }
 }
