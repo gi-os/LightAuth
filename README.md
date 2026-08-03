@@ -3,7 +3,7 @@
 TOTP two-factor authenticator for the **Light Phone III**. Shows up on the phone as
 **Authenticator** (`com.gios.lightauth`).
 
-**Current version: v1.1.x.** See [Version history](#version-history).
+**Current version: v1.1.8.** See [Version history](#version-history).
 
 Scan the QR code a site gives you for 2FA setup; the six-digit code is there when you
 need it. Codes are computed on the phone from the stored secret — the app requests no
@@ -56,7 +56,7 @@ the provider.
 Grab the newest signed APK from [Releases](../../releases/latest) and sideload it:
 
 ```bash
-adb install -r LightAuth-v1.1.x.apk
+adb install -r LightAuth-v1.1.8.apk
 ```
 
 Or track `https://github.com/gi-os/LightAuth` in **Obtainium** for updates in place.
@@ -239,7 +239,7 @@ Real tags, oldest to newest:
 | v1.0.2 | In-app QR scanning via LightQR's CameraX + ZXing-core reader, replacing `zxing-android-embedded` |
 | v1.0.3 | Hardware wheel scrolls the account list |
 | v1.0.4 | README: documents the wheel and the optional LightControl integration |
-| v1.1.x | **Clock screen.** Codes were being rejected everywhere because the phone's clock had drifted, with nothing on screen to say so. `TimeSource` is now the single clock the app reads, with a persisted signed correction; **CLOCK** shows the UTC time codes are derived from next to the phone's own, wheel-nudgeable a second per notch. Also fixes the QR analyzer, which described the padded camera Y plane as `width`-wide instead of `rowStride`-wide and sheared every row |
+| v1.1.8 | **Clock screen.** Codes were being rejected everywhere because the phone's clock had drifted, with nothing on screen to say so. `TimeSource` is now the single clock the app reads, with a persisted signed correction; **CLOCK** shows the UTC time codes are derived from next to the phone's own, wheel-nudgeable a second per notch. Also fixes the QR analyzer, which described the padded camera Y plane as `width`-wide instead of `rowStride`-wide and sheared every row |
 
 ## Why this isn't a LightOS SDK tool
 
