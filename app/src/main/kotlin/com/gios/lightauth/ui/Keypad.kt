@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -85,20 +86,29 @@ fun PinDots(entered: Int, total: Int) {
 }
 
 @Composable
-private fun KeyRow(content: @Composable () -> Unit) {
+private fun KeyRow(content: @Composable RowScope.() -> Unit) {
     Row(
         Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
         verticalAlignment = Alignment.CenterVertically,
-    ) { content() }
+        content = content,
+    )
     Rule()
 }
 
+/**
+ * One key, exactly a third of the row.
+ *
+ * `weight(1f)`, emphatically not `fillMaxWidth(1f / 3f)`. Inside a Row, a fractional fill
+ * resolves against the width *remaining* after the previously measured children, not against
+ * the row — so three keys asking for a third each came out as ⅓, 2⁄9 and 4⁄27 of the width.
+ * The keypad shrank left to right and sat off-centre with the leftover space padded around it.
+ * Weights are the only thing that divides a Row evenly.
+ */
 @Composable
-private fun Key(label: String, enabled: Boolean, onClick: () -> Unit) {
+private fun RowScope.Key(label: String, enabled: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
-            .fillMaxWidth(1f / 3f)
+            .weight(1f)
             .aspectRatio(1.6f)
             .then(if (enabled) Modifier.clickable(onClick = onClick) else Modifier),
         contentAlignment = Alignment.Center,
