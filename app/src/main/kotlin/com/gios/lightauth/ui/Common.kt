@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -150,4 +151,57 @@ fun MessageDialog(message: String, onDismiss: () -> Unit) {
             TextButton(onClick = onDismiss) { Text("OK", color = Color.White) }
         },
     )
+}
+
+/**
+ * A row with an ON/OFF word on the right instead of a Material switch.
+ *
+ * A switch's thumb and track are two greys that have to stay distinguishable on a matte
+ * greyscale panel, and at this size they do not reliably. The word always does.
+ */
+@Composable
+fun ToggleRow(
+    label: String,
+    sub: String? = null,
+    checked: Boolean,
+    enabled: Boolean = true,
+    onToggle: (Boolean) -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .let { if (enabled) it.clickable { onToggle(!checked) } else it }
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (enabled) Color.White else Dim,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (sub != null) {
+                Text(
+                    sub,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Dim,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(
+            if (checked) "ON" else "OFF",
+            style = MaterialTheme.typography.labelLarge,
+            color = when {
+                !enabled -> RuleGrey
+                checked -> Color.White
+                else -> Dim
+            },
+            maxLines = 1,
+        )
+    }
 }

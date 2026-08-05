@@ -1,7 +1,7 @@
 package com.gios.lightauth.backup
 
 import com.gios.lightauth.data.TotpAccountRepository
-import com.gios.lightauth.totp.OtpAuthUriParser
+import com.gios.lightauth.vault.Vault
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.URLEncoder
@@ -30,25 +30,43 @@ class Backup : LightSyncBackup() {
     /** Nothing on disk is portable, so nothing on disk is included. */
     override fun contents() = Contents(restartAfterRestore = false)
 
+    /**
+     * Streams the snapshot the app last wrote while unlocked. Never decrypts live.
+     *
+     * A background export nearly always arrives while the vault is locked, when not one secret
+     * is readable. Producing an empty file then would be the worst possible outcome — it would
+     * overwrite a good backup with something that still looks like one — so a missing snapshot
+     * throws instead. LightSync records a failed run and keeps yesterday's copy, which is the
+     * honest answer.
+     *
+     * See [Snapshot] for why the snapshot is sealed with the PIN rather than the vault key.
+     */
     override fun export(out: FileOutputStream) {
         val ctx = context ?: return
-        val repo = TotpAccountRepository.getInstance(ctx)
-        val lines = repo.exportUris()
-        out.writer().use { writer ->
-            lines.forEach { writer.write(it + "\n") }
+        val snapshot = SnapshotStore.outgoing(ctx)
+        if (!snapshot.isFile) {
+            error(
+                "No LightAuth snapshot yet. Open the app once (and unlock it, if a PIN is " +
+                    "set) so a backup can be written.",
+            )
         }
+        snapshot.inputStream().use { it.copyTo(out) }
     }
 
+    /**
+     * Parks the payload for the app to import at its next unlock.
+     *
+     * Restore lands in the background too, so there is no PIN available here to decrypt a
+     * sealed snapshot and no vault key available to write a row. Writing the bytes down and
+     * letting [SnapshotStore.ingestPending] apply them later is the only order that works.
+     */
     override fun restore(input: FileInputStream) {
         val ctx = context ?: return
-        val repo = TotpAccountRepository.getInstance(ctx)
-        input.reader().readLines()
-            .map(String::trim)
-            .filter { it.startsWith("otpauth://") }
-            .forEach { uri ->
-                // A single malformed line shouldn't cost you the other twelve accounts.
-                OtpAuthUriParser.parse(uri).onSuccess { repo.addAccount(it) }
-            }
+        SnapshotStore.incoming(ctx).outputStream().use { input.copyTo(it) }
+        // Applies immediately when there is no PIN; otherwise waits for one.
+        if (Vault.key() != null && !Vault.isPinSet()) {
+            runCatching { SnapshotStore.ingestPending(ctx, null) }
+        }
     }
 }
 
@@ -57,6 +75,9 @@ class Backup : LightSyncBackup() {
  *
  * Lives here as an extension rather than in the repository because it exists for backup only —
  * the app itself never has a reason to hold a plaintext secret for longer than generating a code.
+ *
+ * Returns nothing at all while the vault is locked, since [TotpAccountRepository.decryptSecret]
+ * has no key to use. Only [SnapshotStore.refresh] calls this, and only while unlocked.
  */
 internal fun TotpAccountRepository.exportUris(): List<String> =
     accountsForBackup().mapNotNull { account ->

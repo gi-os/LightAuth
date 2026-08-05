@@ -24,7 +24,7 @@ fun HomeScreen(
     vm: AuthViewModel,
     onAddNew: () -> Unit,
     onOpenAccount: (Long) -> Unit,
-    onOpenClock: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     val accounts by vm.accounts.collectAsStateWithLifecycle()
     val error by vm.error.collectAsStateWithLifecycle()
@@ -42,7 +42,7 @@ fun HomeScreen(
             ActionBar(
                 listOf(
                     BarAction("ADD NEW", onAddNew),
-                    BarAction("CLOCK", onOpenClock),
+                    BarAction("SETTINGS", onOpenSettings),
                 ),
             )
         },

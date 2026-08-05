@@ -16,7 +16,7 @@ android {
         targetSdk = 35
         // CI overwrites both from the workflow run number; see .github/workflows/build.yml
         versionCode = 1
-        versionName = "1.1.0"
+        versionName = "1.2.0"
 
         // The LPIII is arm64 only; shipping four ABIs tripled the APK for nothing.
         ndk { abiFilters += "arm64-v8a" }
@@ -45,6 +45,13 @@ android {
     }
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
+
+    // Robolectric needs the merged resources to inflate anything, and a fixed SDK so the
+    // shadow set does not shift under a compileSdk bump.
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -81,4 +88,10 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit:2.0.21")
+
+    // The vault's state machine guards every secret in the app, so it is tested rather than
+    // trusted. Robolectric gives it real SharedPreferences and a real Context on the JVM; the
+    // AndroidKeyStore layer it cannot provide comes in through the DeviceKey seam.
+    testImplementation("org.robolectric:robolectric:4.14.1")
+    testImplementation("androidx.test:core:1.6.1")
 }

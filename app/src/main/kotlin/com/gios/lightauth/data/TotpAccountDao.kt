@@ -41,4 +41,14 @@ internal interface TotpAccountDao {
 
     @Query("SELECT encrypted_secret FROM totp_accounts WHERE id = :id")
     fun getEncryptedSecret(id: Long): ByteArray?
+
+    /** Every ciphertext at once, for the one-time re-wrap onto the vault key. */
+    @Query("SELECT id, encrypted_secret FROM totp_accounts")
+    fun allSecrets(): List<EncryptedRow>
+
+    @Query("UPDATE totp_accounts SET encrypted_secret = :blob WHERE id = :id")
+    fun updateSecret(id: Long, blob: ByteArray): Int
+
+    @Query("DELETE FROM totp_accounts")
+    fun deleteAll(): Int
 }

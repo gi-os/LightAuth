@@ -1,48 +1,33 @@
 package com.gios.lightauth.crypto
 
-import java.nio.ByteBuffer
+import com.gios.lightauth.vault.VaultCrypto
 import java.nio.charset.StandardCharsets
-import javax.crypto.Cipher
-import javax.crypto.spec.GCMParameterSpec
+import javax.crypto.SecretKey
 
-internal class TotpSecretCipher(
-    private val keystore: TotpKeystore = TotpKeystore(),
-) {
-    init {
-        keystore.ensureKey()
-    }
+/**
+ * Encrypts one TOTP secret under whatever key it is handed.
+ *
+ * It used to hold the AndroidKeyStore key itself. It now takes a key per call, because the
+ * key that matters is the vault key — which only exists in memory, and only while the vault
+ * is unlocked. Making that a parameter rather than a field is what stops a locked app from
+ * being able to decrypt anything at all: there is no key for it to reach for.
+ *
+ * Framing is unchanged, `[12-byte IV | ciphertext+tag]`, so [legacyDecrypt] can still read
+ * rows written by the pre-vault versions while the migration runs.
+ */
+internal object TotpSecretCipher {
 
-    /** Output layout is [IV | ciphertext+tag]; the IV comes from the provider, not us. */
-    fun encrypt(plaintext: String): ByteArray {
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(Cipher.ENCRYPT_MODE, keystore.getSecretKey())
-        val iv = cipher.iv
-        val ciphertext = cipher.doFinal(plaintext.toByteArray(StandardCharsets.UTF_8))
-        return ByteBuffer.allocate(iv.size + ciphertext.size)
-            .put(iv)
-            .put(ciphertext)
-            .array()
-    }
+    fun encrypt(key: SecretKey, plaintext: String): ByteArray =
+        VaultCrypto.seal(key, plaintext.toByteArray(StandardCharsets.UTF_8))
 
-    fun decrypt(blob: ByteArray): String {
-        val buffer = ByteBuffer.wrap(blob)
-        val iv = ByteArray(GCM_IV_LENGTH)
-        buffer.get(iv)
-        val ciphertext = ByteArray(buffer.remaining())
-        buffer.get(ciphertext)
+    /** Null on a wrong key or a tampered row, rather than an exception. */
+    fun decrypt(key: SecretKey, blob: ByteArray): String? =
+        VaultCrypto.open(key, blob)?.toString(StandardCharsets.UTF_8)
 
-        val cipher = Cipher.getInstance(TRANSFORMATION)
-        cipher.init(
-            Cipher.DECRYPT_MODE,
-            keystore.getSecretKey(),
-            GCMParameterSpec(GCM_TAG_LENGTH_BITS, iv),
-        )
-        return String(cipher.doFinal(ciphertext), StandardCharsets.UTF_8)
-    }
-
-    companion object {
-        private const val TRANSFORMATION = "AES/GCM/NoPadding"
-        private const val GCM_IV_LENGTH = 12
-        private const val GCM_TAG_LENGTH_BITS = 128
-    }
+    /**
+     * Rows written before the vault existed, sealed with the AndroidKeyStore key directly.
+     * Used once, by the migration, and never again.
+     */
+    fun legacyDecrypt(blob: ByteArray): String? =
+        VaultCrypto.open(TotpKeystore().getSecretKey(), blob)?.toString(StandardCharsets.UTF_8)
 }

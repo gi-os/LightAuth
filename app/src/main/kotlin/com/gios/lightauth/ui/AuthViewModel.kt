@@ -3,6 +3,7 @@ package com.gios.lightauth.ui
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.gios.lightauth.backup.SnapshotStore
 import com.gios.lightauth.data.StoredAccount
 import com.gios.lightauth.data.TotpAccountRepository
 import com.gios.lightauth.totp.OtpAuthUriParser
@@ -20,6 +21,7 @@ import kotlinx.coroutines.withContext
 class AuthViewModel(app: Application) : AndroidViewModel(app) {
 
     private val repo = TotpAccountRepository.getInstance(app)
+    private val appContext = app.applicationContext
 
     val accounts: StateFlow<List<StoredAccount>> = repo.observeAccounts()
         .flowOn(Dispatchers.IO)
@@ -49,7 +51,33 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
                 _error.value = error.message ?: "Could not save this account"
                 return@launch
             }
+            refreshBackupSnapshot()
             onAdded(stored.id)
+        }
+    }
+
+    /**
+     * Rewrites the backup snapshot from the current accounts.
+     *
+     * Has to happen on every change, because a locked app cannot build one on demand — see
+     * [SnapshotStore]. Fire-and-forget on IO: a snapshot one edit stale is a small loss, and
+     * blocking the edit on a PBKDF2 would be a visible one.
+     */
+    private fun refreshBackupSnapshot() {
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { SnapshotStore.refresh(appContext) }
+        }
+    }
+
+    /**
+     * Called once the vault opens: applies anything LightSync restored while locked, then
+     * writes a fresh snapshot. The PIN is needed to open a sealed restore payload and is not
+     * retained past this call.
+     */
+    fun onVaultOpened(pin: String?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { SnapshotStore.ingestPending(appContext, pin) }
+            runCatching { SnapshotStore.refresh(appContext) }
         }
     }
 
@@ -66,6 +94,7 @@ class AuthViewModel(app: Application) : AndroidViewModel(app) {
     fun remove(id: Long, onRemoved: () -> Unit) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) { repo.deleteAccount(id) }
+            refreshBackupSnapshot()
             onRemoved()
         }
     }
