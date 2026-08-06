@@ -83,7 +83,7 @@ the provider.
 Grab the newest signed APK from [Releases](../../releases/latest) and sideload it:
 
 ```bash
-adb install -r BrightAuthenticator-v1.2.x.apk
+adb install -r LightAuth-v1.2.x.apk
 ```
 
 Or track `https://github.com/gi-os/BrightAuthenticator` in **Obtainium** for updates in place.
@@ -238,7 +238,7 @@ inside the app beats anything reachable from outside it, so installing it does n
 BrightAuthenticator's scrolling away.
 
 ```bash
-adb install -r BrightControl-v1.0.x.apk
+adb install -r LightControl-v1.0.x.apk
 
 # NOTE: this setting is a list, and this command REPLACES it — if you also run
 # LightVoice's push-to-talk, colon-join both components instead.
@@ -354,7 +354,7 @@ Tools for the Light Phone III, all open source.
 | [LightGlance](https://github.com/gi-os/LightGlance) | Ambient notification dots | Plain Android |
 | [BrightChat](https://github.com/gi-os/BrightChat) | iMessage over a self-hosted BlueBubbles server | Fork of [craigeley/chat](https://github.com/craigeley/chat) |
 | [BrightTransit](https://github.com/gi-os/BrightTransit) | Live MTA subway arrivals | light-sdk fork |
-| [BrightLibrary](https://github.com/gi-os/BrightLibrary) | RSVP speed reader for EPUB and MOBI | Fork of [fluffyspace/FastRead](https://github.com/fluffyspace/FastRead) |
+| [LightBooks](https://github.com/gi-os/BrightLibrary) | RSVP speed reader for EPUB and MOBI | Fork of [fluffyspace/FastRead](https://github.com/fluffyspace/FastRead) |
 
 The Light Phone does not sponsor or endorse any of these. Licences vary per repo.
 
