@@ -1,4 +1,4 @@
-# LightAuth
+# BrightAuthenticator
 
 TOTP two-factor authenticator for the **Light Phone III**. Shows up on the phone as
 **Authenticator** (`com.gios.lightauth`).
@@ -17,12 +17,12 @@ secrets are encrypted *behind it*, not merely hidden behind a screen — see
 
 ## Backups
 
-Set up [LightSync](https://github.com/gi-os/LightSync) once and this app is included — daily, onto
+Set up [BrightSync](https://github.com/gi-os/BrightSync) once and this app is included — daily, onto
 BasilNet, encrypted on the phone before it leaves.
 
 #### With a PIN set, the backup is sealed with the PIN
 
-The PIN nearly broke backups, and the way it did is worth writing down. LightSync exports in the
+The PIN nearly broke backups, and the way it did is worth writing down. BrightSync exports in the
 background, daily, unattended — and the vault is locked whenever the app is not in the
 foreground, which is nearly always, and is the whole point. A locked app can read exactly zero
 secrets, so a live background export could only ever produce an empty file. **Empty is the
@@ -31,7 +31,7 @@ still looks like a backup.
 
 So exporting never decrypts live. While the app *is* unlocked it writes a snapshot to private
 storage, and the provider streams that file — an export is then a file read, needing no key. If
-the snapshot does not exist yet the provider throws instead of shipping nothing, so LightSync
+the snapshot does not exist yet the provider throws instead of shipping nothing, so BrightSync
 records a failed run and keeps yesterday's copy.
 
 The snapshot is sealed with a key derived from the **PIN alone**, its salt travelling inside the
@@ -43,7 +43,7 @@ next unlock, when a PIN exists to open it with; a payload sealed under an older 
 rather than consumed, so it can be retried once that PIN is entered.
 
 With no PIN set there is nothing to derive from, so the payload stays the plaintext URI list it
-has always been and LightSync's own encryption is what protects it.
+has always been and BrightSync's own encryption is what protects it.
 
 What goes up is **`otpauth://` URIs, not the database**, and the difference matters. Every stored
 secret is wrapped with an AES key generated inside AndroidKeyStore, which by design cannot leave
@@ -83,10 +83,10 @@ the provider.
 Grab the newest signed APK from [Releases](../../releases/latest) and sideload it:
 
 ```bash
-adb install -r LightAuth-v1.2.x.apk
+adb install -r BrightAuthenticator-v1.2.x.apk
 ```
 
-Or track `https://github.com/gi-os/LightAuth` in **Obtainium** for updates in place.
+Or track `https://github.com/gi-os/BrightAuthenticator` in **Obtainium** for updates in place.
 
 1. **ADD NEW** → point the camera at the QR code on the site's 2FA setup page.
 2. The account lands in the list, issuer on top, account name underneath.
@@ -168,7 +168,7 @@ PIN lands further down the schedule instead of starting over.
 
 **Erase after failed attempts** is separate, off by default, and asks twice. It destroys the
 vault key, which destroys every secret with it — there is no copy, so nothing can be walked
-back. Only worth turning on if the LightSync backup below is genuinely running. A throttled
+back. Only worth turning on if the BrightSync backup below is genuinely running. A throttled
 attempt does not count toward it, so erasing takes a patient attacker rather than a fast one.
 
 Changing the PIN asks for the old one first. That is the actual requirement, not a courtesy:
@@ -225,20 +225,20 @@ permission, no root. Notches are paid off a fraction per frame rather than appli
 arrival, so a spin reads as one sweep instead of a stack of jumps, and the first notch
 after a pause is held until a second confirms it — the wheel sits under a thumb, and a
 stray brush shouldn't move the code you're reading. Only the turns are handled here; the
-wheel click and camera button do nothing in LightAuth.
+wheel click and camera button do nothing in BrightAuthenticator.
 
-### Optional: LightControl
+### Optional: BrightControl
 
-[LightControl](https://github.com/gi-os/LightControl) is a separate, optional app that
+[BrightControl](https://github.com/gi-os/BrightControl) is a separate, optional app that
 gives the wheel click and camera button a job phone-wide: hold the wheel and turn for
 brightness, tap it for the flashlight, the camera button for the camera, each rebindable
 — tap and hold as two separate gestures — to any app on the phone. It deliberately passes
-bare turns through to `com.gios.*` (LightAuth included), because per-notch scrolling
+bare turns through to `com.gios.*` (BrightAuthenticator included), because per-notch scrolling
 inside the app beats anything reachable from outside it, so installing it does not take
-LightAuth's scrolling away.
+BrightAuthenticator's scrolling away.
 
 ```bash
-adb install -r LightControl-v1.0.x.apk
+adb install -r BrightControl-v1.0.x.apk
 
 # NOTE: this setting is a list, and this command REPLACES it — if you also run
 # LightVoice's push-to-talk, colon-join both components instead.
@@ -250,7 +250,7 @@ adb shell appops set com.gios.lightcontrol WRITE_SETTINGS allow
 adb shell appops set com.gios.lightcontrol SYSTEM_ALERT_WINDOW allow
 ```
 
-Latest APK: https://github.com/gi-os/LightControl/releases/latest
+Latest APK: https://github.com/gi-os/BrightControl/releases/latest
 
 ## Where the secrets live
 
@@ -315,16 +315,16 @@ Real tags, oldest to newest:
 | v1.0.1 | Initial release — light-sdk authenticator example ported to a plain APK |
 | v1.0.2 | In-app QR scanning via LightQR's CameraX + ZXing-core reader, replacing `zxing-android-embedded` |
 | v1.0.3 | Hardware wheel scrolls the account list |
-| v1.0.4 | README: documents the wheel and the optional LightControl integration |
-| v1.2.x | **PIN lock.** Optional 4–8 digit PIN that encrypts the vault rather than hiding a screen: a random vault key wrapped by PBKDF2(PIN) *and* by the non-exportable AndroidKeyStore key, absent from memory whenever the app is not in the foreground. Escalating lockout, opt-in erase-on-failure, PIN-sealed LightSync snapshots so unattended backups still work while locked. Fixes a bug where backgrounding the app with no PIN set stranded every code until relaunch |
+| v1.0.4 | README: documents the wheel and the optional BrightControl integration |
+| v1.2.x | **PIN lock.** Optional 4–8 digit PIN that encrypts the vault rather than hiding a screen: a random vault key wrapped by PBKDF2(PIN) *and* by the non-exportable AndroidKeyStore key, absent from memory whenever the app is not in the foreground. Escalating lockout, opt-in erase-on-failure, PIN-sealed BrightSync snapshots so unattended backups still work while locked. Fixes a bug where backgrounding the app with no PIN set stranded every code until relaunch |
 | v1.1.8 | **Clock screen.** Codes were being rejected everywhere because the phone's clock had drifted, with nothing on screen to say so. `TimeSource` is now the single clock the app reads, with a persisted signed correction; **CLOCK** shows the UTC time codes are derived from next to the phone's own, wheel-nudgeable a second per notch. Also fixes the QR analyzer, which described the padded camera Y plane as `width`-wide instead of `rowStride`-wide and sheared every row |
 
 ## Why this isn't a LightOS SDK tool
 
 The SDK example is a fine piece of code, but SDK tools cannot be installed on a LightOS
 build in the wild today. A plain APK installs over `adb` now and updates through
-Obtainium later — the same reason [LightPass](https://github.com/gi-os/LightPass) and
-[LightTip](https://github.com/gi-os/LightTip) are plain APKs. The SDK's own
+Obtainium later — the same reason [BrightPasses](https://github.com/gi-os/BrightPasses) and
+[BrightTip](https://github.com/gi-os/BrightTip) are plain APKs. The SDK's own
 `LightQrCodeScanner` has no equivalent outside the sandbox, so LightQR's scanner does
 that job instead.
 
@@ -343,18 +343,18 @@ Tools for the Light Phone III, all open source.
 
 | Tool | What it does | Built on |
 | --- | --- | --- |
-| **LightAuth** (this repo) | TOTP two-factor codes, with a confirm step before a delete | Plain Android, ports the light-sdk example |
-| [LightPass](https://github.com/gi-os/LightPass) | Photograph a movie ticket, keep the stub | Plain Android |
-| [LightTip](https://github.com/gi-os/LightTip) | Tip calculator, plus a receipt splitter that reads the line items | Plain Android |
-| [LightNoise](https://github.com/gi-os/LightNoise) | Twelve synthesized sounds, a two-layer mixer and a sleep timer | Plain Android |
+| **BrightAuthenticator** (this repo) | TOTP two-factor codes, with a confirm step before a delete | Plain Android, ports the light-sdk example |
+| [BrightPasses](https://github.com/gi-os/BrightPasses) | Photograph a movie ticket, keep the stub | Plain Android |
+| [BrightTip](https://github.com/gi-os/BrightTip) | Tip calculator, plus a receipt splitter that reads the line items | Plain Android |
+| [BrightNoise](https://github.com/gi-os/BrightNoise) | Twelve synthesized sounds, a two-layer mixer and a sleep timer | Plain Android |
 | [LightPods](https://github.com/gi-os/LightPods) | AirPods battery, in-ear and lid status | Plain Android |
 | [LightQR](https://github.com/gi-os/LightQR) | QR scanner, plus a browser generator | Plain Android |
-| [LightRSS](https://github.com/gi-os/LightRSS) | RSS and Atom reader with images and QR subscribe | light-sdk fork |
-| [LightControl](https://github.com/gi-os/LightControl) | The wheel and camera button, working phone-wide | Plain Android |
+| [BrightNews](https://github.com/gi-os/BrightNews) | RSS and Atom reader with images and QR subscribe | light-sdk fork |
+| [BrightControl](https://github.com/gi-os/BrightControl) | The wheel and camera button, working phone-wide | Plain Android |
 | [LightGlance](https://github.com/gi-os/LightGlance) | Ambient notification dots | Plain Android |
-| [LightChat](https://github.com/gi-os/LightChat) | iMessage over a self-hosted BlueBubbles server | Fork of [craigeley/chat](https://github.com/craigeley/chat) |
-| [LightNYCSubway](https://github.com/gi-os/LightNYCSubway) | Live MTA subway arrivals | light-sdk fork |
-| [LightFastread](https://github.com/gi-os/LightFastread) | RSVP speed reader for EPUB and MOBI | Fork of [fluffyspace/FastRead](https://github.com/fluffyspace/FastRead) |
+| [BrightChat](https://github.com/gi-os/BrightChat) | iMessage over a self-hosted BlueBubbles server | Fork of [craigeley/chat](https://github.com/craigeley/chat) |
+| [BrightTransit](https://github.com/gi-os/BrightTransit) | Live MTA subway arrivals | light-sdk fork |
+| [BrightLibrary](https://github.com/gi-os/BrightLibrary) | RSVP speed reader for EPUB and MOBI | Fork of [fluffyspace/FastRead](https://github.com/fluffyspace/FastRead) |
 
 The Light Phone does not sponsor or endorse any of these. Licences vary per repo.
 
