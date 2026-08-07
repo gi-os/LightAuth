@@ -3,6 +3,17 @@
 TOTP two-factor authenticator for the **Light Phone III**. Shows up on the phone as
 **Authenticator** (`com.gios.lightauth`).
 
+## Install via BrightMarket
+
+<p align="center">
+  <img src="https://gi-os.github.io/brightmarket-index/assets/brightmarket-qr.png" alt="Scan to open BrightMarket" width="180" />
+</p>
+
+Scan the code above, or visit
+**[gi-os.github.io/brightmarket-index/browse.html](https://gi-os.github.io/brightmarket-index/browse.html)**, to install
+and keep this app updated through **BrightMarket** — no Play Store, no PC
+required.
+
 **Current version: v1.2.x.** See [Version history](#version-history).
 
 Scan the QR code a site gives you for 2FA setup; the six-digit code is there when you
@@ -55,7 +66,6 @@ readable by hand in a pinch.
 Restore feeds the same parser the QR scanner uses, and `addAccount` treats issuer plus label as
 the identity — so restoring twice, or onto a phone that still has some of the accounts, converges
 rather than duplicating.
-
 
 ## What this is and why
 
